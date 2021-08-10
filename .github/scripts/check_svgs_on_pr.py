@@ -54,8 +54,12 @@ def check_svgs(svg_file_paths: List[Path]):
     :return: None if there no errors. If there is, return a JSON.stringified
     list with the error messages in it.
     """
+    # the attribute that triggers Icomoon's stroke alerts
+    stroke_trigger = "stroke-width"
+
     # batch err messages together so user can fix everything at once
     err_msgs = []
+
     for svg_path in svg_file_paths:
         try:
             tree = et.parse(svg_path)
@@ -74,6 +78,13 @@ def check_svgs(svg_file_paths: List[Path]):
 
             if root.get("y") is not None:
                 err_msg.append("-unneccessary 'y' attribute in svg root element -> Remove it")
+
+            for element in root.iter():
+                if element.get(stroke_trigger) != 0:
+	                err_msg.append(f"-Detected `stroke-width` property in <{element.tag}> -> Convert strokes to fills instead. See https://icomoon.io/#docs/stroke-to-fill.")
+
+                if stroke_trigger in element.get("style"):
+	                err_msg.append(f"-Detected `stroke-width` style in <{element.tag}> -> Convert strokes to fills instead. See https://icomoon.io/#docs/stroke-to-fill.")
 
             if len(err_msg) > 1:
                 err_msgs.append("\n".join(err_msg))
